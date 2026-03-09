@@ -32,6 +32,6 @@ mkdir -p /opt/mlflow
 cd /opt/mlflow
 
 git clone git@gitlab.com:Aadetayo/asm-wf-platform.git
-cd asm-wf-platform/mlflow
+cd asm-wf-platform/infra/mlflow
 
 docker compose up -d

@@ -1,0 +1,15 @@
+﻿tuning:
+  sepformer:
+    direction: minimize
+    n_trials: 30
+    search_space: "tuning/search_spaces/sepformer.yaml"
+
+  roformer:
+    direction: minimize
+    n_trials: 20
+    search_space: "tuning/search_spaces/roformer.yaml"
+
+  scnet:
+    direction: minimize
+    n_trials: 25
+    search_space: "tuning/search_spaces/scnet.yaml"

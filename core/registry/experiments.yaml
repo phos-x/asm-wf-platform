@@ -1,0 +1,17 @@
+﻿experiments:
+  exp_sepformer_mel:
+    model: sepformer
+    dataset: mel
+    mlflow_experiment: "sepformer_mel"
+    params:
+      epochs: 50
+      seed: 42
+    extra_args: "--use_mel true"
+
+  exp_roformer_pitch:
+    model: roformer
+    dataset: pitch
+    mlflow_experiment: "roformer_pitch"
+    params:
+      epochs: 30
+      seed: 123
