@@ -1,0 +1,6 @@
+project_name        = "asm-wf"
+aws_region          = "eu-north-1"
+allowed_cidr        = "YOUR.IP.ADDR.0/32"
+artifact_bucket_arn = "arn:aws:s3:::your-artifact-bucket"
+mlflow_repo_url     = "https://gitlab.com/Aadetayo/asm-wf-platform.git"
+enable_ssh          = true
