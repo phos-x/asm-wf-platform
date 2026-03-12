@@ -1,6 +1,0 @@
-﻿hyperparameters:
-  lr:
-    type: float
-    low: 1.0e-5
-    high: 1.0e-3
-    log: true

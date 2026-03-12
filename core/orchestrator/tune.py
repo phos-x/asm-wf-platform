@@ -25,6 +25,7 @@ def _ray_trial_runner(
     """Ray Trainable that executes the black-box script and parses stdout."""
     metric_pattern = re.compile(_metric_regex, re.IGNORECASE)
 
+    # Append Optuna's suggested hyperparameters to the base command
     cmd_str = _cmd_template
     for param_name, param_val in config.items():
         cmd_str += f" --{param_name} {param_val}"
@@ -42,11 +43,13 @@ def _ray_trial_runner(
     )
 
     try:
+        # Read the terminal output in real-time
         for line in iter(process.stdout.readline, ''):
             print(f"[Trial] {line}", end='')
             match = metric_pattern.search(line)
             if match:
                 current_metric = float(match.group(1))
+                # Report the metric to Ray/Optuna for Early Stopping
                 train.report({_target_metric: current_metric})
         
         process.wait()
@@ -54,6 +57,7 @@ def _ray_trial_runner(
             raise RuntimeError(f"Trial failed with exit code {process.returncode}")
             
     except Exception as e:
+        # Clean up the orphaned subprocess if Ray kills this trial early
         process.terminate()
         process.wait()
         raise e
@@ -105,7 +109,7 @@ def execute_tune(tune_name: str) -> None:
         storage_path_str = tune_def.get("storage_path", "ray_results")
         storage_path = str(PROJECT_ROOT / storage_path_str)
 
-        # Build the dynamic Search Space
+        # Build the dynamic Search Space safely (casting to float/int to avoid YAML issues)
         search_space = {}
         for param, props in tune_def.get("search_space", {}).items():
             p_type = props.get("type")
@@ -135,14 +139,10 @@ def execute_tune(tune_name: str) -> None:
         
         ray.init(ignore_reinit_error=True)
 
-        optuna_search = OptunaSearch(
-            metric=target_metric,
-            mode=mode
-        )
+        # Let TuneConfig handle passing the metric and mode down to Optuna and ASHA
+        optuna_search = OptunaSearch()
 
         asha_scheduler = ASHAScheduler(
-            metric=target_metric,
-            mode=mode,
             max_t=max_t,
             grace_period=grace_period,
             reduction_factor=reduction_factor
@@ -153,13 +153,15 @@ def execute_tune(tune_name: str) -> None:
         tuner = tune.Tuner(
             tune.with_resources(trainable_with_params, resources=resources),
             tune_config=tune.TuneConfig(
+                metric=target_metric,  # Ray handles the translation here
+                mode=mode,             # Ray handles the translation here
                 search_alg=optuna_search,
                 scheduler=asha_scheduler,
                 num_samples=num_samples,
                 max_concurrent_trials=max_concurrent_trials
             ),
             param_space=search_space,
-            run_config=train.RunConfig(
+            run_config=tune.RunConfig(  # Uses tune.RunConfig instead of train.RunConfig
                 name=tune_name,
                 storage_path=storage_path
             )
@@ -169,6 +171,7 @@ def execute_tune(tune_name: str) -> None:
         print(f"  -> Metric tracking: '{target_metric}' ({mode})")
         print(f"  -> Launching {num_samples} total trials ({max_concurrent_trials} concurrently)...")
         
+        # Execute the sweep!
         results = tuner.fit()
         best_result = results.get_best_result()
 
