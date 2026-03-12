@@ -1,15 +1,35 @@
 ﻿tuning:
-  sepformer:
-    direction: minimize
-    n_trials: 30
-    search_space: "tuning/search_spaces/sepformer.yaml"
+  tune_bs_roformer_mel:
+    base_experiment: "exp_bs_roformer_mel"
+    
+    # Core Optuna Tracking
+    target_metric: "val_loss"
+    mode: "min"
+    metric_regex: '(?i)(?:valid(?:ation)?\s*loss|val_loss)\s*[:=]\s*([0-9]+\.[0-9]+)'
+    
+    # Storage / Execution
+    storage_path: "results/ray_tune" # Where to save the Tune dashboards/logs
+    resources_per_trial:
+      gpu: 1
+      cpu: 2
+      
+    # Ray Tune Runner Settings
+    tune_config:
+      num_samples: 10
+      max_concurrent_trials: 2
+      
+    # ASHA (Early Stopping) Settings
+    asha_config:
+      max_t: 100            # The maximum epochs any trial can run
+      grace_period: 5       # Let it run for at least 5 epochs before killing it
+      reduction_factor: 2   # How aggressively to cull bad trials (default is usually 4)
 
-  roformer:
-    direction: minimize
-    n_trials: 20
-    search_space: "tuning/search_spaces/roformer.yaml"
-
-  scnet:
-    direction: minimize
-    n_trials: 25
-    search_space: "tuning/search_spaces/scnet.yaml"
+    # Optuna Search Space
+    search_space:
+      lr:
+        type: "loguniform"
+        low: 1.0e-5
+        high: 1.0e-3
+      batch_size:
+        type: "choice"
+        values: [2, 4]

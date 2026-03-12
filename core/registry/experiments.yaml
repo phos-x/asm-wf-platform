@@ -1,17 +1,22 @@
 ﻿experiments:
-  exp_sepformer_mel:
-    model: sepformer
-    dataset: mel
-    mlflow_experiment: "sepformer_mel"
-    params:
-      epochs: 50
-      seed: 42
-    extra_args: "--use_mel true"
+  exp_bs_roformer_mel:
+    model: "bs_roformer"
+    dataset: "musdb18"
+    
+    mlflow_experiment: "stem_separation_baselines"
+    
+    # Execution (Remember, $DATASET_DIR is injected by the orchestrator!)
+    cmd: "python train.py --data_path $DATASET_DIR/train"
+    extra_args: "--dataset_type 1
+     --model_type bs_roformer
+     --config configs/config_musdb18_bs_roformer.yaml
+     --results_path results/
+     --num_workers 5
+     --valid_path $DATASET_DIR/test
+     --device_ids 0 "
 
-  exp_roformer_pitch:
-    model: roformer
-    dataset: pitch
-    mlflow_experiment: "roformer_pitch"
-    params:
-      epochs: 30
-      seed: 123
+  exp_bs_roformer_vocals:
+    model: "bs_roformer"
+    dataset: "vocals_only_v1"
+    cmd: "python train.py --data_path $DATASET_DIR"
+    extra_args: "--dataset_type 2 --target_instrument vocals"

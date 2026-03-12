@@ -1,39 +1,8 @@
 ﻿models:
   bs_roformer:
-    repo: "https://github.com/ZFTurbo/Music-Source-Separation-Training.git"
+    source_repo: "https://github.com/ZFTurbo/Music-Source-Separation-Training.git"
     branch: "main"
+    requirements_file: "requirements.txt" 
     target_dir: "models/bs_roformer"
-
     train_script: "train.py"
-    infer_script: "inference.py"
-    config_path: "configs/config_vocals_bs_roformer.yaml"
-
-    run_setup: true
-    setup:
-      - "pip install -r requirements.txt"
-
-  # roformer:
-  #   repo: "https://github.com/your-org/roformer.git"
-  #   branch: "dev"
-  #   target_dir: "models/roformer"
-
-  #   train_script: "train.py"
-  #   infer_script: "inference/run.py"
-  #   config_path: "config/base.yaml"
-
-  #   run_setup: false
-  #   setup:
-  #     - "pip install -r requirements.txt"
-  #     - "python scripts/prepare_weights.py"
-
-  # scnet:
-  #   repo: "https://github.com/your-org/scnet.git"
-  #   branch: "stable"
-  #   target_dir: "models/scnet"
-
-  #   train_script: "training/train_model.py"
-  #   infer_script: "inference/predict.py"
-  #   config_path: "configs/default.yaml"
-
-  #   run_setup: false
-  #   setup: []
+  

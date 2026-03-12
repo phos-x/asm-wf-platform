@@ -1,16 +1,12 @@
 ﻿datasets:
   musdb18:
-    type: audio
-    processed_path: "datasets/processed/musdb18"
-    description: "musdb18 dataset."
-    link: "https://zenodo.org/records/1117372/files/musdb18.zip?download=1"
+    source_url: "https://zenodo.org/records/1117372/files/musdb18.zip" # Or an S3 bucket URI
+    raw_path: "core/datasets/raw/musdb18"
+    extract_script: "core/scripts/extract_stems.py"
+    processed_path: "core/datasets/processed/musdb18"
+    dataset_type: 1 # Specific to how bs_roformer expects its data
 
-  # pitch:
-  #   type: audio
-  #   processed_path: "datasets/processed/pitch"
-  #   description: "Pitch-feature processed dataset."
-
-  # noise:
-  #   type: audio
-  #   processed_path: "datasets/processed/noise"
-  #   description: "Noise-augmented dataset."
+  vocals_only_v1:
+    raw_path: "core/datasets/raw/vocals_v1"
+    processed_path: "core/datasets/processed/vocals_v1"
+    dataset_type: 2
