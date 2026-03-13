@@ -3,6 +3,6 @@
     source_repo: "https://github.com/ZFTurbo/Music-Source-Separation-Training.git"
     branch: "main"
     requirements_file: "requirements.txt" 
-    target_dir: "models/bs_roformer"
+    target_dir: "models/zf_turbo"
     train_script: "train.py"
   

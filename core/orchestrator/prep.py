@@ -22,21 +22,71 @@ def _prep_clone(model_def: Dict, model_dir: Path) -> None:
         print(f"  [STEP: CLONE] Repo already exists at {model_dir}. Skipping.")
 
 def _prep_install(model_def: Dict, model_dir: Path) -> None:
+    """
+    Installs dependencies via pip. Uses pipreqs to generate missing requirements,
+    a two-pass robust strategy for installation, and platform-level overrides.
+    """
     req_file_name = model_def.get("requirements_file", "requirements.txt")
     req_path = model_dir / req_file_name
     flag_file = model_dir / ".orchestrator_reqs_installed"
+    extra_deps = model_def.get("extra_dependencies", [])
+
+    if flag_file.exists():
+        print(f"  [STEP: INSTALL] Requirements flag found. Skipping pip install.")
+        return
+
+    if not req_path.exists():
+        print(f"  [STEP: INSTALL] No {req_file_name} found. Generating via pipreqs...")
+        _safe_run([sys.executable, "-m", "pip", "install", "pipreqs"], cwd=PROJECT_ROOT, env=os.environ.copy())
+        
+        gen_cmd = ["pipreqs", str(model_dir), "--savepath", str(req_path), "--force"]
+        exit_code = _safe_run(gen_cmd, cwd=PROJECT_ROOT, env=os.environ.copy())
+        
+        if exit_code != 0 or not req_path.exists():
+            print("  [ERROR] pipreqs failed to generate requirements.txt.")
+        else:
+            print(f"  [STEP: INSTALL] Successfully generated {req_file_name}.")
 
     if req_path.exists():
-        if not flag_file.exists():
-            print(f"  [STEP: INSTALL] Installing requirements from {req_file_name}...")
-            pip_cmd = [sys.executable, "-m", "pip", "install", "-r", str(req_path)]
-            if _safe_run(pip_cmd, cwd=model_dir, env=os.environ.copy()) != 0:
-                raise RuntimeError(f"Failed to install requirements from {req_path}")
-            flag_file.touch()
+        print(f"  [STEP: INSTALL] Attempting bulk install from {req_file_name}...")
+        pip_cmd = [sys.executable, "-m", "pip", "install", "-r", str(req_path)]
+        exit_code = _safe_run(pip_cmd, cwd=model_dir, env=os.environ.copy())
+        
+        if exit_code != 0:
+            print("\n  [WARNING] Bulk install failed. Falling back to line-by-line installation...")
+            failed_packages = []
+            with open(req_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                
+            for line in lines:
+                pkg = line.strip()
+                if not pkg or pkg.startswith("#"): 
+                    continue
+                    
+                print(f"  -> Installing: {pkg}")
+                single_code = _safe_run([sys.executable, "-m", "pip", "install", pkg], cwd=model_dir, env=os.environ.copy())
+                if single_code != 0:
+                    print(f"  [ERROR] Failed to install '{pkg}'. Skipping to next package...")
+                    failed_packages.append(pkg)
+            
+            if failed_packages:
+                print(f"  [WARNING] Finished with failures on: {failed_packages}")
+                print("  [WARNING] You may need to address these manually or update models.yaml.")
+            else:
+                print(f"  [STEP: INSTALL] Line-by-line installation completed successfully.")
         else:
-            print(f"  [STEP: INSTALL] Requirements flag found. Skipping pip install.")
-    else:
-        print(f"  [STEP: INSTALL] No {req_file_name} found. Skipping.")
+            print("  [STEP: INSTALL] Bulk install successful.")
+
+    if extra_deps:
+        print(f"\n  [STEP: INSTALL] Installing extra dependencies defined in models.yaml...")
+        for pkg in extra_deps:
+            print(f"  -> Installing Extra: {pkg}")
+            extra_code = _safe_run([sys.executable, "-m", "pip", "install", pkg], cwd=model_dir, env=os.environ.copy())
+            if extra_code != 0:
+                print(f"  [ERROR] Failed to install extra dependency: '{pkg}'.")
+
+    print(f"\n  [STEP: INSTALL] Environment dependency setup complete.")
+    flag_file.touch()
 
 def _prep_download(dataset_def: Dict, raw_path: Optional[Path]) -> None:
     source_url = dataset_def.get("source_url")
